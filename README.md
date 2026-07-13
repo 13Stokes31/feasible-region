@@ -108,7 +108,7 @@ towards where it escapes, and detects when the objective has no finite optimum.
 
 ## Compatibility
 
-- Typst `>= 0.13.0`
+- Typst `>= 0.14.0`
 - CeTZ `0.5.2`
 
 ## Known limitations
