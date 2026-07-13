@@ -9,4 +9,4 @@ repository = "https://github.com/13Stokes31/feasible-region"
 keywords = ["linear-programming", "optimization", "plot", "math", "education"]
 categories = ["visualization"]
 compiler = "0.13.0"
-exclude = ["tests", "thumbnail.png", "ROADMAP.md", "TESTING.md"]
+exclude = ["tests", "gallery", "ROADMAP.md", "TESTING.md", ".gitignore"]
