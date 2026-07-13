@@ -52,3 +52,17 @@
 #pagebreak()
 // duplicate + always-true constraints
 #feasible-region(((1,1,4,"<="),(1,1,4,"<="),(0,0,5,"<=")), objective: (1,1), sense: "max")
+#pagebreak()
+
+// -- colors ------------------------------------------------------------------
+// per-constraint color (5th element), objective color (3rd), and region-color
+#feasible-region(
+  ((1, 1, 4, "<=", red), (1, 3, 6, "<=", teal)),
+  objective: (3, 4, olive), region-color: rgb("#2b8a3e"),
+)
+#pagebreak()
+// many constraints → distinct auto colors, no repeats
+#feasible-region(
+  ((1,0,7,"<="),(0,1,7,"<="),(1,1,11,"<="),(2,1,13,"<="),(1,2,13,"<="),(3,1,17,"<="),(1,3,17,"<="),(1,1,2,">=")),
+  objective: (1,1), sense: "max",
+)

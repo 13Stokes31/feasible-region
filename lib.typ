@@ -64,13 +64,19 @@
 /// their free sides are marked with arrows.
 ///
 /// - constraints: array of (a, b, c, op) → a·x + b·y <op> c ; op ∈ "<=",">=","<",">"
+///     an optional 5th element sets that line's color: (a, b, c, op, color)
 /// - objective: (c1, c2) coefficients of Z = c1·x + c2·y   (or none)
+///     an optional 3rd element sets the objective color: (c1, c2, color)
 /// - sense: "max" (default) or "min" (optimization sense)
 /// - gradient: draw the ∇Z vector at the optimum
 /// - table: show the vertex table; if false, a compact vertex legend
-/// - first-quadrant: add x ≥ 0, y ≥ 0
+/// - first-quadrant: add x ≥ 0, y ≥ 0 (ON by default)
 /// - labels: line equations, in the order of `constraints`
 /// - lang: "en" (default) or "es" — language of the rendered labels
+/// - region-color: fill/hatch/border color of the feasible region
+///
+/// Lines without an explicit color get distinct colors automatically (a curated
+/// palette, then generated hues), so they never repeat however many there are.
 #let feasible-region(
   constraints,
   objective: none,
@@ -80,6 +86,7 @@
   first-quadrant: true,
   labels: none,
   lang: "en",
+  region-color: rgb("#2e5fa3"),
   size: (6, 4.5),
   margin: 1.15,
 ) = {
@@ -96,7 +103,7 @@
 
   let satisfies(p) = {
     let (x, y) = p
-    for (a, b, c, s) in R {
+    for (a, b, c, s, ..) in R {
       let sn = _norm(s)
       let v = a * x + b * y
       if sn == "<=" and v > c + 1e-6 { return false }
@@ -141,7 +148,7 @@
     let dx = calc.cos(th)
     let dy = calc.sin(th)
     let ok = true
-    for (a, b, c, s) in R {
+    for (a, b, c, s, ..) in R {
       let sn = _norm(s)
       let ad = a * dx + b * dy
       if sn == "<=" and ad > 1e-9 { ok = false }
@@ -159,7 +166,7 @@
   let opt-multiple = false
   let opt-ray = none        // recession direction with constant Z (infinite optimal edge)
   if objective != none {
-    let (oc1, oc2) = objective
+    let (oc1, oc2, ..) = objective
     for d in recession {
       let g = oc1 * d.at(0) + oc2 * d.at(1)
       if sense == "max" and g > 1e-7 { obj-unbounded = true }
@@ -240,7 +247,7 @@
 
   // ---- clip the frame against each half-plane (Sutherland–Hodgman) ----
   let clip-hp(poly, ine) = {
-    let (a, b, c, s) = ine
+    let (a, b, c, s, ..) = ine
     let sn = _norm(s)
     let inside = p => {
       let v = a * p.at(0) + b * p.at(1)
@@ -285,16 +292,30 @@
 
   // does an edge (in data coords) lie on a real constraint line?
   let edge-on-constraint = (A, B) => {
-    for (a, b, c, s) in R {
+    for (a, b, c, s, ..) in R {
       if calc.abs(a * A.at(0) + b * A.at(1) - c) < 1e-5 and calc.abs(a * B.at(0) + b * B.at(1) - c) < 1e-5 { return true }
     }
     false
   }
 
-  let colors = (rgb("#1a9850"), rgb("#a0522d"), rgb("#c85c1a"), rgb("#922B21"), _blue)
-  let circled = ("①", "②", "③", "④", "⑤", "⑥")
-  let letters = ("A", "B", "C", "D", "E", "F", "G", "H")
-  let obj-color = rgb("#6a1b9a")
+  // default palette for the boundary lines (kept distinct and print-friendly)
+  let colors = (
+    rgb("#1a9850"), rgb("#a0522d"), rgb("#c85c1a"), rgb("#922B21"), _blue,
+    rgb("#c9a227"), rgb("#008080"), rgb("#d6336c"), rgb("#5f7d1f"), rgb("#495057"),
+  )
+  // color of constraint k: a manual 5th tuple element wins; otherwise the palette;
+  // otherwise an evenly-spread generated hue, so colors never repeat, however many
+  let line-color-for = (k, con) => if con.len() >= 5 {
+    con.at(4)
+  } else if k < colors.len() {
+    colors.at(k)
+  } else {
+    color.hsl(calc.rem(k * 137.5, 360) * 1deg, 62%, 45%)
+  }
+  let circled = ("①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩")
+  let letters = ("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z")
+  // objective color: a manual 3rd element of `objective` wins; otherwise purple
+  let obj-color = if objective != none and objective.len() >= 3 { objective.at(2) } else { rgb("#6a1b9a") }
 
   let plot = cetz.canvas({
     import cetz.draw: *
@@ -338,8 +359,8 @@
     // ---- fill + hatching of the clipped region ----
     if region.len() >= 3 {
       let polygon = region.map(p => (sx(p.at(0)), sy(p.at(1))))
-      line(..polygon, close: true, fill: _blue.transparentize(78%), stroke: none)
-      let dark-blue = _blue.darken(25%)
+      line(..polygon, close: true, fill: region-color.transparentize(78%), stroke: none)
+      let region-edge = region-color.darken(25%)
       let hatch-gap = 0.42
       let dmin = polygon.map(p => p.at(0) + p.at(1)).reduce((a, b) => calc.min(a, b))
       let dmax = polygon.map(p => p.at(0) + p.at(1)).reduce((a, b) => calc.max(a, b))
@@ -357,7 +378,7 @@
             hits.push((p1.at(0) + t * (p2.at(0) - p1.at(0)), p1.at(1) + t * (p2.at(1) - p1.at(1))))
           }
         }
-        if hits.len() >= 2 { line(hits.at(0), hits.at(1), stroke: 0.5pt + dark-blue) }
+        if hits.len() >= 2 { line(hits.at(0), hits.at(1), stroke: 0.5pt + region-edge) }
         d += hatch-gap
       }
       // border: solid on real sides; "continues" arrow on open frame sides
@@ -368,7 +389,7 @@
         let A = (sx(Ad.at(0)), sy(Ad.at(1)))
         let B = (sx(Bd.at(0)), sy(Bd.at(1)))
         if edge-on-constraint(Ad, Bd) {
-          line(A, B, stroke: 0.9pt + dark-blue)
+          line(A, B, stroke: 0.9pt + region-edge)
         } else {
           // open side (on the frame): arrows pointing outward
           let mx = (A.at(0) + B.at(0)) / 2
@@ -390,8 +411,8 @@
               line(
                 (bx, by),
                 (bx + out-dir.at(0) * 0.45, by + out-dir.at(1) * 0.45),
-                mark: (end: "stealth", fill: dark-blue),
-                stroke: 0.8pt + dark-blue,
+                mark: (end: "stealth", fill: region-edge),
+                stroke: 0.8pt + region-edge,
               )
             }
           }
@@ -400,12 +421,13 @@
     }
 
     // ---- boundary lines ----
-    for (k, (a, b, c, s)) in constraints.enumerate() {
+    for (k, con) in constraints.enumerate() {
+      let (a, b, c, s, ..) = con
       let cand = ()
       if calc.abs(b) > 1e-9 { cand.push((minx, (c - a * minx) / b)); cand.push((maxx, (c - a * maxx) / b)) }
       if calc.abs(a) > 1e-9 { cand.push(((c - b * miny) / a, miny)); cand.push(((c - b * maxy) / a, maxy)) }
       let pts = cand.filter(p => p.at(0) >= minx - 1e-6 and p.at(0) <= maxx + 1e-6 and p.at(1) >= miny - 1e-6 and p.at(1) <= maxy + 1e-6)
-      let col = colors.at(calc.rem(k, colors.len()))
+      let col = line-color-for(k, con)
       if pts.len() >= 2 {
         // dashed boundary if the inequality is strict (does not include the line)
         let stroke-style = if _strict(s) {
@@ -421,7 +443,7 @@
 
     // ---- objective level lines ----
     if objective != none and verts.len() > 0 {
-      let (oc1, oc2) = objective
+      let (oc1, oc2, ..) = objective
       let level-line(kval, style) = {
         let cand = ()
         if calc.abs(oc2) > 1e-9 { cand.push((minx, (kval - oc1 * minx) / oc2)); cand.push((maxx, (kval - oc1 * maxx) / oc2)) }
@@ -515,7 +537,7 @@
   let line-legend = if labels != none {
     constraints.enumerate().map(((k, r)) => {
       let et = if k < labels.len() { labels.at(k) } else { none }
-      if et != none { text(fill: colors.at(calc.rem(k, colors.len())))[#circled.at(calc.rem(k, circled.len())) #et] }
+      if et != none { text(fill: line-color-for(k, r))[#circled.at(calc.rem(k, circled.len())) #et] }
     }).filter(x => x != none)
   } else { () }
 
@@ -537,7 +559,7 @@
   }
 
   if objective != none and table and verts.len() > 0 {
-    let (oc1, oc2) = objective
+    let (oc1, oc2, ..) = objective
     let rows = verts.enumerate().map(((k, p)) => {
       let et = letters.at(calc.rem(k, letters.len()))
       let coord = $(#_fmt-num(p.at(0)), #_fmt-num(p.at(1)))$

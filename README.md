@@ -32,6 +32,8 @@ optima, unbounded objectives, empty regions, strict inequalities and any quadran
 // → Optimum (max): Z = 13 at C(3, 1)
 ```
 
+This is exactly the first image in the gallery above.
+
 Each constraint is a 4-tuple `(a, b, c, op)` meaning `a·x + b·y op c`, where
 `op` is one of `"<="`, `">="`, `"<"`, `">"`. The objective is `Z = c1·x + c2·y`,
 given as `(c1, c2)`.
@@ -40,20 +42,43 @@ given as `(c1, c2)`.
 
 | Parameter        | Default      | Meaning |
 |------------------|--------------|---------|
-| `constraints`    | *(required)* | Array of `(a, b, c, op)`. `op ∈ "<=", ">=", "<", ">"`. |
-| `objective`      | `none`       | `(c1, c2)` of `Z = c1·x + c2·y`. Omit to just draw the region. |
+| `constraints`    | *(required)* | Array of `(a, b, c, op)`. `op ∈ "<=", ">=", "<", ">"`. An optional 5th element sets that line's color: `(a, b, c, op, color)`. |
+| `objective`      | `none`       | `(c1, c2)` of `Z = c1·x + c2·y`. Omit to just draw the region. An optional 3rd element sets the objective color: `(c1, c2, color)`. |
 | `sense`          | `"max"`      | Optimization sense: `"max"` or `"min"`. |
 | `gradient`       | `true`       | Draw the `∇Z` vector at the optimum. |
 | `table`          | `true`       | Show the vertex table; if `false`, a compact vertex legend. |
-| `first-quadrant` | `true`       | Add `x ≥ 0, y ≥ 0` implicitly. |
+| `first-quadrant` | `true`       | Add `x ≥ 0, y ≥ 0` implicitly. See the note below. |
 | `labels`         | `none`       | Line equations (content), in the order of `constraints`. |
 | `lang`           | `"en"`       | Language of the rendered labels: `"en"` or `"es"`. |
+| `region-color`   | blue         | Fill / hatch / border color of the feasible region. |
 | `size`           | `(6, 4.5)`   | Canvas size, in CeTZ units. |
 | `margin`         | `1.15`       | Padding factor around the region. |
+
+> **⚠️ `first-quadrant` is `true` by default**, so **`x ≥ 0` and `y ≥ 0` are added
+> automatically** (the usual assumption in school problems). Pass
+> `first-quadrant: false` to draw only the constraints you write — for example
+> when the region lives in another quadrant.
 
 > **Note on two "senses".** The 4th tuple element is the inequality *operator*
 > (`"<="`, …). The `sense` parameter is the *optimization* sense (`"max"`/`"min"`).
 > They are unrelated.
+
+## Colors
+
+Every boundary line gets a **distinct color automatically** — a curated palette
+first, then generated hues — so colors never repeat, no matter how many
+constraints you add. Override any of them explicitly:
+
+```typ
+#feasible-region(
+  (
+    (1, 1, 4, "<=", red),          // this line in red
+    (1, 3, 6, "<="),               // auto color
+  ),
+  objective: (3, 4, olive),        // objective, optimum and ∇Z in olive
+  region-color: rgb("#2b8a3e"),    // the feasible region in green
+)
+```
 
 ## What it handles
 
