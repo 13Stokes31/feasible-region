@@ -1,5 +1,5 @@
 [package]
-name = "feasible-region"
+name = "quick-vertex"
 version = "0.1.0"
 entrypoint = "lib.typ"
 authors = ["Jesús Manuel González Meneses"]
