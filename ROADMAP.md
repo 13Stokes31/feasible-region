@@ -71,4 +71,4 @@ Known issues and pending decisions. Nothing here blocks ordinary use; the two
 - [x] Confirm the name `feasible-region` is free in the index.
 - [x] Final visual pass on the gallery images.
 - [x] Submit a PR to `typst/packages` (`packages/preview/quick-vertex/0.1.0/`, renamed from `feasible-region` per reviewer feedback).
-- [x] `0.1.1`: equal aspect ratio (`∇Z` now truly perpendicular; `equal-aspect: false` opt-out with synced/independent tick steps), exterior-bisector vertex labels, native `.any()` dedup, overflow-safe "unbounded objective" message. PR submitted to `typst/packages`.
+- [x] `0.1.1`: equal aspect ratio (`∇Z` now truly perpendicular; `equal-aspect: false` opt-out with synced/independent tick steps), exterior-bisector vertex labels, native `.any()` dedup, overflow-safe "unbounded objective" message. PR submitted to `typst/packages`: [#5391](https://github.com/typst/packages/pull/5391) (pending review).
