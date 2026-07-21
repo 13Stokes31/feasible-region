@@ -10,12 +10,12 @@ the cases a synthetic example set usually forgets: **unbounded regions, multiple
 optima, unbounded objectives, empty regions, strict inequalities and any quadrant**.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/13Stokes31/feasible-region/main/gallery/g1.png" width="47%" alt="Bounded region, unique optimum">
-  <img src="https://raw.githubusercontent.com/13Stokes31/feasible-region/main/gallery/g2.png" width="47%" alt="Unbounded region, finite minimum">
+  <img src="https://raw.githubusercontent.com/13Stokes31/quick-vertex/main/gallery/g1.png" width="47%" alt="Bounded region, unique optimum">
+  <img src="https://raw.githubusercontent.com/13Stokes31/quick-vertex/main/gallery/g2.png" width="47%" alt="Unbounded region, finite minimum">
 </p>
 <p align="center">
-  <img src="https://raw.githubusercontent.com/13Stokes31/feasible-region/main/gallery/g3.png" width="47%" alt="Multiple optima along a segment">
-  <img src="https://raw.githubusercontent.com/13Stokes31/feasible-region/main/gallery/g4.png" width="47%" alt="Region outside the first quadrant">
+  <img src="https://raw.githubusercontent.com/13Stokes31/quick-vertex/main/gallery/g3.png" width="47%" alt="Multiple optima along a segment">
+  <img src="https://raw.githubusercontent.com/13Stokes31/quick-vertex/main/gallery/g4.png" width="47%" alt="Region outside the first quadrant">
 </p>
 
 ## Usage
@@ -114,10 +114,10 @@ towards where it escapes, and detects when the objective has no finite optimum.
 
 ## Known limitations
 
-See [`ROADMAP.md`](ROADMAP.md). In short: a couple of cosmetic issues (vertex
-label overlaps, zero-area regions) and two rare semantic edge cases (a strict
-inequality binding the optimum; more than two vertices tied in `Z`). None affect
-ordinary textbook problems.
+See [`ROADMAP.md`](ROADMAP.md). In short: a couple of cosmetic issues (a vertex
+label can still land on an axis tick; zero-area regions) and two rare semantic
+edge cases (a strict inequality binding the optimum; more than two vertices
+tied in `Z`). None affect ordinary textbook problems.
 
 ## License
 
