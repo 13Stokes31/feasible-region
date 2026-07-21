@@ -51,8 +51,9 @@ given as `(c1, c2)`.
 | `labels`         | `none`       | Line equations (content), in the order of `constraints`. |
 | `lang`           | `"en"`       | Language of the rendered labels: `"en"` or `"es"`. |
 | `region-color`   | blue         | Fill / hatch / border color of the feasible region. |
-| `size`           | `(6, 4.5)`   | Canvas size, in CeTZ units. |
+| `size`           | `(6, 4.5)`   | Canvas size, in CeTZ units — with `equal-aspect: true`, an **upper bound**: the drawn extent shrinks in whichever dimension isn't the tightest fit. |
 | `margin`         | `1.15`       | Padding factor around the region. |
+| `equal-aspect`   | `true`       | Both axes use the same units-per-length scale (textbook square-grid convention; both axes also share one tick step). `false` stretches each axis independently to fill `size` exactly, with its own tick step — `∇Z` stays perpendicular to the level lines either way. |
 
 > **⚠️ `first-quadrant` is `true` by default**, so **`x ≥ 0` and `y ≥ 0` are added
 > automatically** (the usual assumption in school problems). Pass

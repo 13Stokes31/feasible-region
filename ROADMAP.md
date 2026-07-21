@@ -23,10 +23,20 @@ Known issues and pending decisions. Nothing here blocks ordinary use; the two
   *Why unfixed:* only reachable with pathological objectives or collinear-in-`Z`
   vertices; a fix needs edge-collinearity detection.
 
+### Possible new flag
+
+- **`level-lines: false`** — show the highlighted optimal vertex from `objective`
+  *without* drawing the level-line family, for materials that solve LP by the
+  vertex-evaluation method (not the level-line method) and don't want to mix the
+  two on the same figure. Today `objective != none` always draws the level lines.
+
 ### Cosmetic
 
-- **Vertex label overlaps** when two vertices are very close (fixed offset, no
-  anti-collision).
+- **Vertex label can still land on an axis tick** — labels are now placed along
+  the exterior bisector (away from the polygon), which fixes overlaps with
+  *other vertices/edges*, but the bisector doesn't know about axis tick labels,
+  so a vertex right next to a tick (e.g. on the y-axis) can still collide with
+  it (e.g. `E` vs the `6` tick in a 5-vertex region).
 - **Zero-area regions** (a single point or a segment) are drawn, but without
   hatching (the hatch loop has nothing to traverse).
 - The **sliding level lines** are schematic (they illustrate the sweep; they are
@@ -34,14 +44,31 @@ Known issues and pending decisions. Nothing here blocks ordinary use; the two
 
 ## Possible improvements (Phase 4, optional)
 
-- Anti-collision placement for vertex labels.
 - Hatching (or a clearer mark) for degenerate zero-area regions.
 - More localization languages in `_i18n` (currently `en`, `es`).
 - A minimal reference-image test setup (e.g. `tytanic`) beyond the compile-only
   regression file in `tests/`.
 
+### Feature ideas
+
+- **A truly minimal preset.** Sugar for `table: false, gradient: false,
+  objective: none` (region + lines + vertices only), the common "statement" look,
+  so callers don't repeat the flags.
+- Consider a shorthand for passing the objective as `Z = a x + b y` symbolically
+  (today it's `objective: (a, b)`), matching how textbooks write it.
+
+### Out of scope (decided)
+
+- **Plain half-plane systems (no LP framing)** — drawing the intersection of a
+  *system of linear inequalities*, including **unbounded** regions, with **no
+  vertex/optimum** annotation (a mesh-fill approach, pre-optimization exercises).
+  Considered and **rejected here**: it contradicts this package's vertex-centric
+  identity and would add a second, unrelated rendering algorithm. It stays as a
+  separate `semiplano` function in the private `mate-graficas` package.
+
 ## Before publishing to Typst Universe
 
 - [x] Confirm the name `feasible-region` is free in the index.
-- [ ] Final visual pass on the gallery images.
+- [x] Final visual pass on the gallery images.
 - [x] Submit a PR to `typst/packages` (`packages/preview/quick-vertex/0.1.0/`, renamed from `feasible-region` per reviewer feedback).
+- [x] `0.1.1`: equal aspect ratio (`∇Z` now truly perpendicular; `equal-aspect: false` opt-out with synced/independent tick steps), exterior-bisector vertex labels, native `.any()` dedup, overflow-safe "unbounded objective" message. PR submitted to `typst/packages`.

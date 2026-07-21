@@ -1,6 +1,6 @@
 [package]
 name = "quick-vertex"
-version = "0.1.0"
+version = "0.1.1"
 entrypoint = "lib.typ"
 authors = ["Jesús Manuel González Meneses"]
 license = "MIT"

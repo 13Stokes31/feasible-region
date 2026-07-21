@@ -14,7 +14,9 @@ Then check, page by page:
 - [ ] **Bounded, unique optimum** — region filled + hatched; optimum highlighted
   at `C(3,1)`; table shows `Z = 13` in the marked row.
 - [ ] **Unbounded, finite minimum** — open sides carry outward arrows; "unbounded
-  region" note appears; optimum `Z = 8` at `A(4,0)`.
+  region" note appears; optimum `Z = 8` at `A(4,0)`; `∇Z` points **away** from
+  the feasible region (flipped for `sense: "min"`, since the gradient itself
+  points toward increasing `Z`).
 - [ ] **Unbounded objective** — no vertex is marked optimal; message "No finite
   max: Z increases without bound…".
 - [ ] **Multiple optima (segment)** — thick segment `C(3,1)–D(0,4)`; message
@@ -29,6 +31,13 @@ Then check, page by page:
   Spanish (Vértice / Coordenadas / Óptimo / Solución múltiple / Región no factible).
 - [ ] **Gradient direction** — `∇Z` is visually perpendicular to the optimal
   level line, both in the first quadrant and with negative coordinates.
+- [ ] **`equal-aspect: false`** — on a case with a non-square data range (e.g.
+  case 1 or 2 above), pass `equal-aspect: false`: the figure stretches to fill
+  `size` exactly, each axis picks its own tick step again, and `∇Z` is still
+  visually perpendicular to the level line.
+- [ ] **Vertex label placement** — on a many-vertex region (e.g. the "many
+  constraints" case), letters lean away from the polygon (exterior bisector)
+  instead of a fixed corner offset; check none sits on top of an edge.
 
 ## Gallery
 

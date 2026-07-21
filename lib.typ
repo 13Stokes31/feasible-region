@@ -74,6 +74,10 @@
 /// - labels: line equations, in the order of `constraints`
 /// - lang: "en" (default) or "es" — language of the rendered labels
 /// - region-color: fill/hatch/border color of the feasible region
+/// - equal-aspect: force both axes to the same units-per-length scale (default
+///     true — matches the textbook square-grid convention, and keeps ∇Z
+///     visually perpendicular to the level lines). false stretches each axis
+///     independently to fill `size` exactly.
 ///
 /// Lines without an explicit color get distinct colors automatically (a curated
 /// palette, then generated hues), so they never repeat however many there are.
@@ -89,6 +93,7 @@
   region-color: rgb("#2e5fa3"),
   size: (6, 4.5),
   margin: 1.15,
+  equal-aspect: true,
 ) = {
   let S = _i18n.at(lang, default: _i18n.en)
   let R = constraints
@@ -126,11 +131,8 @@
     for j in range(i + 1, R.len()) {
       let p = intersect(R.at(i), R.at(j))
       if p != none and satisfies(p) {
-        let is-new = true
-        for q in verts {
-          if calc.abs(q.at(0) - p.at(0)) < 1e-4 and calc.abs(q.at(1) - p.at(1)) < 1e-4 { is-new = false }
-        }
-        if is-new { verts.push(p) }
+        let is-dup = verts.any(q => calc.abs(q.at(0) - p.at(0)) < 1e-4 and calc.abs(q.at(1) - p.at(1)) < 1e-4)
+        if not is-dup { verts.push(p) }
       }
     }
   }
@@ -238,9 +240,26 @@
   let maxy = by1 + pad-y
   if maxx - minx < 1e-6 { maxx = minx + 1 }
   if maxy - miny < 1e-6 { maxy = miny + 1 }
-  let (w, h) = size
-  let sx = x => (x - minx) / (maxx - minx) * w
-  let sy = y => (y - miny) / (maxy - miny) * h
+  // equal-aspect (default): a single units-per-length scale for both axes, so
+  // angles on screen match true angles (∇Z ⊥ level lines, etc.). `size` is
+  // then an upper bound — the drawn extent (w, h) shrinks in whichever
+  // dimension is not the tightest fit, instead of stretching that axis
+  // independently. With equal-aspect: false, each axis stretches on its own
+  // to fill `size` exactly (angles are then only approximate).
+  let (size-w, size-h) = size
+  let kx = size-w / (maxx - minx)
+  let ky = size-h / (maxy - miny)
+  let w = size-w
+  let h = size-h
+  if equal-aspect {
+    let uscale = calc.min(kx, ky)
+    kx = uscale
+    ky = uscale
+    w = (maxx - minx) * uscale
+    h = (maxy - miny) * uscale
+  }
+  let sx = x => (x - minx) * kx
+  let sy = y => (y - miny) * ky
   // position of the axes inside the canvas (where x=0 and y=0 fall)
   let axis-y = sx(0)  // vertical axis, at x=0
   let axis-x = sy(0)  // horizontal axis, at y=0
@@ -333,8 +352,10 @@
       mult * base
     }
     let fmt = _fmt-num  // same formatting as in the legends (avoids -0)
+    // with equal-aspect, both axes share one step (the same grid everywhere);
+    // otherwise each axis picks its own "nice" step independently.
+    let px = nice-step(if equal-aspect { calc.max(maxx - minx, maxy - miny) } else { maxx - minx })
     // x ticks: cover the WHOLE range [minx, maxx], not just the positive part
-    let px = nice-step(maxx - minx)
     let i0 = calc.ceil(minx / px)
     let i1 = calc.floor(maxx / px)
     for i in range(i0, i1 + 1) {
@@ -345,7 +366,7 @@
       }
     }
     // y ticks
-    let py = nice-step(maxy - miny)
+    let py = if equal-aspect { px } else { nice-step(maxy - miny) }
     let j0 = calc.ceil(miny / py)
     let j1 = calc.floor(maxy / py)
     for j in range(j0, j1 + 1) {
@@ -495,10 +516,15 @@
 
         if gradient {
           let vopt = verts.at(opt-idx)
-          // gradient direction on screen: scale by the range WIDTH
-          // (maxx-minx / maxy-miny), not by maxx/maxy (was wrong outside quadrant 1)
-          let gx = oc1 / (maxx - minx) * w
-          let gy = oc2 / (maxy - miny) * h
+          // gradient direction on screen: (ky·oc1, kx·oc2) — the "crossed" scale
+          // factors are exactly what keeps the arrow perpendicular to the level
+          // lines on screen even when kx ≠ ky (equal-aspect: false). Flipped for
+          // "min" so it points towards the optimum (∇Z itself always points
+          // towards increasing Z, but a "min" optimum lies in the decreasing
+          // direction).
+          let gsign = if sense == "min" { -1 } else { 1 }
+          let gx = gsign * ky * oc1
+          let gy = gsign * kx * oc2
           let norm = calc.sqrt(gx * gx + gy * gy)
           if norm > 1e-9 {
             let L = 0.9
@@ -516,11 +542,32 @@
     }
 
     // ---- finite vertices: only those inside the frame ----
+    let n-verts = verts.len()
     for (k, p) in verts.enumerate() {
       if p.at(0) >= minx - 1e-6 and p.at(0) <= maxx + 1e-6 and p.at(1) >= miny - 1e-6 and p.at(1) <= maxy + 1e-6 {
         let is-opt = opt-idxs.contains(k)
-        let lx = if calc.abs(p.at(0)) < 1e-4 { -0.32 } else { 0.28 }
-        let ly = if calc.abs(p.at(1)) < 1e-4 { -0.3 } else { 0.28 }
+        // label offset: the exterior bisector at this vertex, so the letter
+        // leans away from the polygon instead of a fixed corner offset (which
+        // could land the label on top of an edge or another vertex).
+        let (lx, ly) = (0.28, 0.28)
+        if n-verts >= 3 {
+          let prev = verts.at(calc.rem(k - 1 + n-verts, n-verts))
+          let next = verts.at(calc.rem(k + 1, n-verts))
+          let v1 = (prev.at(0) - p.at(0), prev.at(1) - p.at(1))
+          let v2 = (next.at(0) - p.at(0), next.at(1) - p.at(1))
+          let len1 = calc.sqrt(v1.at(0) * v1.at(0) + v1.at(1) * v1.at(1))
+          let len2 = calc.sqrt(v2.at(0) * v2.at(0) + v2.at(1) * v2.at(1))
+          if len1 > 1e-5 and len2 > 1e-5 {
+            let out-x = -(v1.at(0) / len1 + v2.at(0) / len2)
+            let out-y = -(v1.at(1) / len1 + v2.at(1) / len2)
+            let out-len = calc.sqrt(out-x * out-x + out-y * out-y)
+            if out-len > 1e-5 {
+              let dist = if is-opt { 0.42 } else { 0.35 }
+              lx = out-x / out-len * dist
+              ly = out-y / out-len * dist
+            }
+          }
+        }
         if is-opt {
           circle((sx(p.at(0)), sy(p.at(1))), radius: 0.18, fill: obj-color.transparentize(65%), stroke: none)
           circle((sx(p.at(0)), sy(p.at(1))), radius: 0.11, fill: obj-color, stroke: 0.8pt + white)
@@ -599,7 +646,7 @@
       let et-opt = letters.at(calc.rem(opt-idx, letters.len()))
       align(center, text(size: 9pt)[#S.optimum (#sense): $Z = #_fmt-num(evals.at(opt-idx))$ #S.at #et-opt$(#_fmt-num(vopt.at(0)), #_fmt-num(vopt.at(1)))$])
     } else if obj-unbounded {
-      align(center, text(size: 9pt, fill: rgb("#922B21"))[#(S.no-finite)(sense)])
+      align(center, block(width: 100%, text(size: 9pt, fill: rgb("#922B21"))[#(S.no-finite)(sense)]))
     }
   } else {
     let vertex-legend = verts.enumerate().map(((k, p)) => [#letters.at(calc.rem(k, letters.len()))$(#_fmt-num(p.at(0)), #_fmt-num(p.at(1)))$])
